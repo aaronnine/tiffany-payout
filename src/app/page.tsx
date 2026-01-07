@@ -11,7 +11,7 @@ import ReportsPage from '@/components/pages/ReportsPage';
 import LogsPage from '@/components/pages/LogsPage';
 import ApiPage from '@/components/pages/ApiPage';
 
-export default function Home() {
+export default function Page() {
   const { user, loading } = useAuth();
   const [activePage, setActivePage] = useState('home');
   const [mounted, setMounted] = useState(false);
