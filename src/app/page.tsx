@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Sidebar from '@/components/Sidebar';
 import AuthPage from '@/components/auth/AuthPage';
@@ -14,6 +14,12 @@ import ApiPage from '@/components/pages/ApiPage';
 export default function Dashboard() {
   const { user, loading } = useAuth();
   const [activePage, setActivePage] = useState('home');
+  const [mounted, setMounted] = useState(false);
+
+  // 确保客户端渲染，避免服务端渲染错误
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const renderPage = () => {
     switch (activePage) {
@@ -34,7 +40,8 @@ export default function Dashboard() {
     }
   };
 
-  if (loading) {
+  // 在客户端挂载前显示加载状态
+  if (!mounted || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -45,10 +52,12 @@ export default function Dashboard() {
     );
   }
 
+  // 未登录用户显示登录页面
   if (!user) {
     return <AuthPage />;
   }
 
+  // 已登录用户显示仪表盘
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar activePage={activePage} onPageChange={setActivePage} />
