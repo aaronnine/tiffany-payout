@@ -11,12 +11,12 @@ import ReportsPage from '@/components/pages/ReportsPage';
 import LogsPage from '@/components/pages/LogsPage';
 import ApiPage from '@/components/pages/ApiPage';
 
-export default function Dashboard() {
+export default function Home() {
   const { user, loading } = useAuth();
   const [activePage, setActivePage] = useState('home');
   const [mounted, setMounted] = useState(false);
 
-  // 确保客户端渲染，避免服务端渲染错误
+  // 确保客户端渲染
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -40,7 +40,7 @@ export default function Dashboard() {
     }
   };
 
-  // 在客户端挂载前显示加载状态
+  // 加载状态
   if (!mounted || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
