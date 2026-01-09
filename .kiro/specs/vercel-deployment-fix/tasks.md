@@ -6,13 +6,13 @@
 
 ## Tasks
 
-- [-] 1. 创建和配置 Vercel 部署文件
+- [x] 1. 创建和配置 Vercel 部署文件
   - 创建 vercel.json 配置文件，包含正确的构建命令和路由规则
   - 配置 Vercel 特定的函数和重写规则
   - 验证配置文件的 JSON 格式正确性
   - _Requirements: 1.4, 1.5_
 
-- [ ] 1.1 编写 vercel.json 配置验证测试
+- [x] 1.1 编写 vercel.json 配置验证测试
   - 验证 vercel.json 文件存在且格式正确
   - 测试配置文件包含所有必需的字段
   - _Requirements: 1.4_
