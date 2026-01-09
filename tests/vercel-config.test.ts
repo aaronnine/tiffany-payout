@@ -27,20 +27,9 @@ describe('Vercel Configuration Validation', () => {
       }
     });
 
-    test('should contain buildCommand field', () => {
-      expect(config).toHaveProperty('buildCommand');
-      expect(typeof config.buildCommand).toBe('string');
-      expect(config.buildCommand.trim()).not.toBe('');
-    });
-
     test('should contain framework field set to nextjs', () => {
       expect(config).toHaveProperty('framework');
       expect(config.framework).toBe('nextjs');
-    });
-
-    test('should contain functions configuration for API routes', () => {
-      expect(config).toHaveProperty('functions');
-      expect(typeof config.functions).toBe('object');
     });
 
     test('should contain rewrites for proper routing', () => {
@@ -48,23 +37,18 @@ describe('Vercel Configuration Validation', () => {
       expect(Array.isArray(config.rewrites)).toBe(true);
     });
 
-    test('buildCommand should be npm run build', () => {
-      expect(config.buildCommand).toBe('npm run build');
-    });
-
-    test('functions should configure API routes properly', () => {
-      const apiRouteKey = 'src/app/api/**/*.ts';
-      expect(Object.keys(config.functions)).toContain(apiRouteKey);
-      const apiConfig = config.functions[apiRouteKey];
-      expect(apiConfig).toHaveProperty('runtime');
-      expect(apiConfig.runtime).toBe('nodejs20.x');
-    });
-
     test('rewrites should handle SPA routing', () => {
       const hasRootRewrite = config.rewrites.some((rewrite: any) => 
         rewrite.source === '/((?!api|_next|_static|favicon.ico).*)'
       );
       expect(hasRootRewrite).toBe(true);
+    });
+
+    test('rewrite destination should point to root', () => {
+      const rootRewrite = config.rewrites.find((rewrite: any) => 
+        rewrite.source === '/((?!api|_next|_static|favicon.ico).*)'
+      );
+      expect(rootRewrite.destination).toBe('/');
     });
   });
 
@@ -84,20 +68,9 @@ describe('Vercel Configuration Validation', () => {
       expect(config).not.toHaveProperty('routes');
     });
 
-    test('should have proper function configuration structure', () => {
-      if (config.functions) {
-        Object.values(config.functions).forEach((funcConfig: any) => {
-          expect(funcConfig).toHaveProperty('runtime');
-          if (funcConfig.memory) {
-            expect(typeof funcConfig.memory).toBe('number');
-            expect(funcConfig.memory).toBeGreaterThan(0);
-          }
-          if (funcConfig.maxDuration) {
-            expect(typeof funcConfig.maxDuration).toBe('number');
-            expect(funcConfig.maxDuration).toBeGreaterThan(0);
-          }
-        });
-      }
+    test('should not contain invalid function configurations', () => {
+      // Ensure no invalid function configurations that cause deployment failures
+      expect(config).not.toHaveProperty('functions');
     });
 
     test('should have valid rewrite rules structure', () => {
@@ -111,6 +84,15 @@ describe('Vercel Configuration Validation', () => {
           expect(rewrite.destination.trim()).not.toBe('');
         });
       }
+    });
+
+    test('should be minimal and deployment-safe', () => {
+      // Ensure the configuration is minimal and won't cause deployment issues
+      const allowedKeys = ['framework', 'rewrites'];
+      const configKeys = Object.keys(config);
+      configKeys.forEach(key => {
+        expect(allowedKeys).toContain(key);
+      });
     });
   });
 });
