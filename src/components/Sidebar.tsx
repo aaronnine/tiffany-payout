@@ -1,6 +1,6 @@
 'use client';
 
-import { Home, FileText, Download, BarChart3, Clock, Settings, LogOut, Shield } from 'lucide-react';
+import { Home, FileText, Download, BarChart3, Clock, Settings, LogOut, Shield, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { isAdmin, getUserDisplayName } from '@/utils/admin';
 import { useRouter } from 'next/navigation';
@@ -29,7 +29,11 @@ export default function Sidebar({ activePage, onPageChange }: SidebarProps) {
   };
 
   const handleAdminClick = () => {
-    router.push('/admin/users');
+    router.push('/admin');
+  };
+
+  const handleBackToMerchant = () => {
+    router.push('/');
   };
 
   return (
@@ -70,13 +74,22 @@ export default function Sidebar({ activePage, onPageChange }: SidebarProps) {
       
       <div className="p-4 border-t border-white/10">
         {admin && (
-          <button
-            onClick={handleAdminClick}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-white/10 transition-colors mb-2"
-          >
-            <Shield size={20} />
-            <span className="font-medium">⚙️ 管理员后台</span>
-          </button>
+          <>
+            <button
+              onClick={handleAdminClick}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-white/10 transition-colors mb-2"
+            >
+              <Shield size={20} />
+              <span className="font-medium">⚙️ 管理员后台</span>
+            </button>
+            <button
+              onClick={handleBackToMerchant}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-white/10 transition-colors mb-2"
+            >
+              <ArrowLeft size={20} />
+              <span className="font-medium">返回商户面板</span>
+            </button>
+          </>
         )}
         <button
           onClick={handleSignOut}
