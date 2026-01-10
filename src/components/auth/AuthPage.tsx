@@ -2,13 +2,16 @@
 
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { LogIn, UserPlus, Mail, Lock, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { LogIn, UserPlus, Mail, Lock, AlertCircle, CheckCircle2, Building, User, Phone } from 'lucide-react';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [contactPerson, setContactPerson] = useState('');
+  const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -33,7 +36,41 @@ export default function AuthPage() {
         }
 
         if (data.user) {
-          setSuccess('登錄成功！正在跳轉...');
+          // 检查用户状态
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('status, role, company_name')
+            .eq('id', data.user.id)
+            .single();
+
+          if (profileError) {
+            setError('無法獲取用戶資料，請稍後再試');
+            await supabase.auth.signOut();
+            return;
+          }
+
+          // 根据状态处理登录结果
+          switch (profile.status) {
+            case 'pending':
+              setError('您的帳號正在等待管理員審核，請耐心等待審核完成後再登錄');
+              await supabase.auth.signOut();
+              break;
+            case 'suspended':
+              setError('您的帳號已被暫停，請聯繫管理員');
+              await supabase.auth.signOut();
+              break;
+            case 'banned':
+              setError('您的帳號已被禁用，請聯繫管理員');
+              await supabase.auth.signOut();
+              break;
+            case 'active':
+              setSuccess(`歡迎回來，${profile.company_name || profile.role === 'admin' ? '管理員' : '商戶'}！`);
+              // 登录成功，AuthContext 会处理后续逻辑
+              break;
+            default:
+              setError('帳號狀態異常，請聯繫管理員');
+              await supabase.auth.signOut();
+          }
         }
       } else {
         // 注册逻辑
@@ -44,6 +81,16 @@ export default function AuthPage() {
 
         if (password.length < 6) {
           setError('密碼長度至少需要 6 個字符');
+          return;
+        }
+
+        if (!companyName.trim()) {
+          setError('請填寫公司名稱');
+          return;
+        }
+
+        if (!contactPerson.trim()) {
+          setError('請填寫聯繫人姓名');
           return;
         }
 
@@ -58,35 +105,31 @@ export default function AuthPage() {
         }
 
         if (data.user) {
-          // 尝试创建用户 profile 记录（如果数据库触发器未设置，则手动创建）
+          // 更新用户资料
           const { error: profileError } = await supabase
             .from('profiles')
-            .insert([
-              {
-                id: data.user.id,
-                email: data.user.email,
-                created_at: new Date().toISOString(),
-              },
-            ])
-            .select();
+            .update({
+              company_name: companyName.trim(),
+              contact_person: contactPerson.trim(),
+              phone: phone.trim() || null,
+            })
+            .eq('id', data.user.id);
 
-          // 如果 profile 已存在（可能是触发器创建的），忽略错误
           if (profileError) {
-            // 检查是否是重复键错误（profile 已存在）
-            if (profileError.code === '23505' || profileError.message.includes('duplicate')) {
-              // Profile 已存在，这是正常的（可能是触发器创建的）
-              console.log('Profile already exists (likely created by trigger)');
-            } else {
-              console.error('Profile creation error:', profileError);
-              // 其他错误仍然记录，但不阻止用户继续
-            }
+            console.error('Profile update error:', profileError);
+            // 不阻止注册流程，只记录错误
           }
 
-          setSuccess('註冊成功！請檢查您的電子郵件以驗證帳號。');
+          setSuccess('註冊成功！您的帳號正在等待管理員審核，審核通過後您將收到郵件通知。');
+          
           // 清空表单
           setEmail('');
           setPassword('');
           setConfirmPassword('');
+          setCompanyName('');
+          setContactPerson('');
+          setPhone('');
+          
           // 3秒后切换到登录页面
           setTimeout(() => {
             setIsLogin(true);
@@ -106,8 +149,8 @@ export default function AuthPage() {
     <div className="min-h-screen bg-gradient-to-br from-[#0ABAB5] via-[#0ABAB5]/90 to-[#0ABAB5]/80 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">USDT Pay</h1>
-          <p className="text-gray-600">支付管理系統</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">USDT Gateway</h1>
+          <p className="text-gray-600">B2B 支付网关系统</p>
         </div>
 
         {/* 切换标签 */}
@@ -183,6 +226,63 @@ export default function AuthPage() {
             </div>
           </div>
 
+          {!isLogin && (
+            <>
+              <div>
+                <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-2">
+                  公司名稱 *
+                </label>
+                <div className="relative">
+                  <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                  <input
+                    id="companyName"
+                    type="text"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    required
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0ABAB5] focus:border-transparent transition-all"
+                    placeholder="請輸入公司名稱"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="contactPerson" className="block text-sm font-medium text-gray-700 mb-2">
+                  聯繫人姓名 *
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                  <input
+                    id="contactPerson"
+                    type="text"
+                    value={contactPerson}
+                    onChange={(e) => setContactPerson(e.target.value)}
+                    required
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0ABAB5] focus:border-transparent transition-all"
+                    placeholder="請輸入聯繫人姓名"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                  聯繫電話
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                  <input
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0ABAB5] focus:border-transparent transition-all"
+                    placeholder="請輸入聯繫電話（可選）"
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
               密碼
@@ -243,7 +343,7 @@ export default function AuthPage() {
         </form>
 
         <div className="mt-6 text-center text-sm text-gray-600">
-          <p>© 2024 USDT Payment System</p>
+          <p>© 2024 USDT Gateway System</p>
         </div>
       </div>
     </div>

@@ -12,7 +12,7 @@ import LogsPage from '@/components/pages/LogsPage';
 import ApiPage from '@/components/pages/ApiPage';
 
 export default function Page() {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const [activePage, setActivePage] = useState('home');
 
   if (loading) {
@@ -26,7 +26,8 @@ export default function Page() {
     );
   }
 
-  if (!user) {
+  // 如果没有用户或用户状态不是 active，显示认证页面
+  if (!user || !profile || profile.status !== 'active') {
     return <AuthPage />;
   }
 

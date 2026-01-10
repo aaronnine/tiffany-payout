@@ -2,7 +2,7 @@
 
 import { Home, FileText, Download, BarChart3, Clock, Settings, LogOut, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { isAdmin } from '@/utils/admin';
+import { isAdmin, getUserDisplayName } from '@/utils/admin';
 import { useRouter } from 'next/navigation';
 
 interface SidebarProps {
@@ -20,9 +20,9 @@ const menuItems = [
 ];
 
 export default function Sidebar({ activePage, onPageChange }: SidebarProps) {
-  const { signOut, user } = useAuth();
+  const { signOut, user, profile } = useAuth();
   const router = useRouter();
-  const admin = isAdmin(user);
+  const admin = isAdmin(user, profile);
 
   const handleSignOut = async () => {
     await signOut();
@@ -35,10 +35,14 @@ export default function Sidebar({ activePage, onPageChange }: SidebarProps) {
   return (
     <div className="w-64 bg-[#0ABAB5] min-h-screen flex flex-col text-white">
       <div className="p-6 border-b border-[#0ABAB5]/20">
-        <h1 className="text-2xl font-bold mb-1">USDT Pay</h1>
-        <p className="text-sm text-white/80">支付管理系統</p>
-        {user && (
-          <p className="text-xs text-white/60 mt-2 truncate">{user.email}</p>
+        <h1 className="text-2xl font-bold mb-1">USDT Gateway</h1>
+        <p className="text-sm text-white/80">B2B 支付网关</p>
+        {profile && (
+          <div className="mt-3 p-2 bg-white/10 rounded-lg">
+            <p className="text-xs text-white/60 mb-1">当前用户</p>
+            <p className="text-sm font-medium truncate">{getUserDisplayName(profile)}</p>
+            <p className="text-xs text-white/70 truncate">{profile.email}</p>
+          </div>
         )}
       </div>
       
@@ -82,7 +86,7 @@ export default function Sidebar({ activePage, onPageChange }: SidebarProps) {
           <span className="font-medium">登出</span>
         </button>
         <div className="mt-4 text-xs text-white/60">
-          <p>© 2024 USDT Payment System</p>
+          <p>© 2024 USDT Gateway System</p>
         </div>
       </div>
     </div>
